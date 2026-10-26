@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Internship Review Automation</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+body{background:#f4f6fb;color:#1f2937;font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0}
+body *{color:#1f2937}
+.container{max-width:1100px;margin:0 auto;padding:0 16px}
+.navbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff}
+.navbar *{color:#fff}
+.card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px;margin-bottom:16px}
+.btn{display:inline-block;padding:6px 14px;border-radius:8px;border:0;background:#4f46e5;color:#fff;cursor:pointer;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-dark{background:#111827}.btn-success{background:#16a34a}
+.btn-outline-primary{background:#fff;color:#4f46e5;border:1px solid #4f46e5}
+.btn-outline-secondary{background:#fff;color:#374151;border:1px solid #9ca3af}
+.btn-outline-light{background:transparent;border:1px solid #fff;color:#fff}
+.btn,.btn *{color:inherit}.btn-primary,.btn-dark,.btn-success{color:#fff}
+.form-control,.form-select{padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#111827;font-size:.9rem}
+.nav{display:flex;list-style:none;padding:0;gap:6px;flex-wrap:wrap}
+.nav-link{padding:6px 14px;border-radius:8px;background:#e5e7eb;border:0;cursor:pointer}
+.nav-link.active{background:#4f46e5}.nav-link.active,.nav-link.active *{color:#fff}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;color:#fff;font-size:.75rem}
+.bg-primary{background:#4f46e5}.bg-secondary{background:#6b7280}.bg-warning{background:#d97706}.bg-success{background:#16a34a}.bg-danger{background:#dc2626}.bg-dark{background:#111827}
+.badge,.bg-primary,.bg-secondary,.bg-warning,.bg-success,.bg-danger,.bg-dark,.me{color:#fff !important}
+.alert{padding:10px 12px;border-radius:8px;margin-bottom:10px}
+.alert-danger{background:#fee2e2}.alert-warning{background:#fef3c7}.alert-info{background:#dbeafe}.alert-success{background:#dcfce7}.alert-dark{background:#e5e7eb}
+.row{display:flex;flex-wrap:wrap;gap:16px}.row>*{flex:1 1 320px;min-width:0}
+.row>.col-md-3,.row>.col-6{flex:1 1 200px}
+.input-group{display:flex;gap:0}.input-group>*{flex:1}
+.input-group .btn{flex:0 0 auto}
+.d-flex{display:flex}.justify-content-between{justify-content:space-between}.align-items-center{align-items:center}.align-items-start{align-items:flex-start}.flex-wrap{flex-wrap:wrap}.gap-2{gap:8px}.fs-6{font-size:1rem}
+.text-muted,.text-muted *{color:#6b7280 !important}.text-uppercase{text-transform:uppercase}
+.mb-0{margin-bottom:0}.mb-1{margin-bottom:4px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:20px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:20px}.p-4{padding:20px}.pb-5{padding-bottom:48px}.px-3{padding-left:16px;padding-right:16px}.w-100{width:100%}
+.navbar-brand{font-weight:600;font-size:1.1rem}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:.9rem}
+.table-light{background:#f9fafb}
+.sticky-top{position:sticky;top:0}
+.progress{background:#e5e7eb;border-radius:999px;overflow:hidden}
+.progress-bar{height:100%}
+.list-group-flush{list-style:none;padding:0;margin:0}
+.stat .num{color:#4f46e5 !important}
+.chat .bub{display:block}
+.chat .bub.bot{color:#1f2937}
+.chat .bub.me{color:#fff !important}
+.scroll{max-height:460px;overflow:auto}
+.navbar{background:#4f46e5}
+.stat{border:0;border-radius:14px}
+.stat .num{font-size:1.8rem;font-weight:700}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#cbd5e1;margin-right:10px;flex-shrink:0}
+.dot.done{background:#16a34a}
+.dot.now{background:#4f46e5;box-shadow:0 0 0 4px #c7d2fe}
+.chat{height:300px;overflow-y:auto;background:#fff;border-radius:12px;padding:12px}
+.bub{max-width:82%;padding:8px 12px;border-radius:12px;margin:6px 0;white-space:pre-wrap;font-size:.92rem}
+.bot{background:#eef2ff}
+.me{background:#4f46e5;color:#fff;margin-left:auto}
+.scroll{max-height:460px;overflow:auto}
+</style>
+</head>
+<body>
+<nav class="navbar navbar-dark px-3 mb-4 d-flex justify-content-between">
+  <span class="navbar-brand mb-0">Internship Review System</span>
+  <button id="logoutBtn" class="btn btn-sm btn-outline-light" onclick="logout()" style="display:none">Logout</button>
+</nav>
+<div class="container pb-5" id="app"><p class="p-4 text-muted">Loading Internship Review System…</p></div>
+
+<script>
+/* ============ CONSTANTS ============ */
+const TODAY = new Date(Date.UTC(2026, 9, 26));
+const fmt = d => new Date(d).toISOString().slice(0, 10);
+const addDays = (d, n) => { const x = new Date(d); x.setUTCDate(x.getUTCDate() + n); return x; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const STEPS = ["Task Assigned","Task Allocated","AI Task Explanation","Review Mail Sent","Review Scheduled","Review Attended","Task Submitted","AI Analysis","AI Feedback","Next Review Mail","Re-submission","Re-analysis","Final Completion"];
+const PROGRESS = {ALLOCATED:5, PENDING_REVIEW:5, REVISION_REQUIRED:9, COMPLETED:13};
+const LABEL = {ALLOCATED:"Allocated", PENDING_REVIEW:"Pending Review", REVISION_REQUIRED:"Revision Required", COMPLETED:"Completed"};
+const COLOR = {ALLOCATED:"primary", PENDING_REVIEW:"secondary", REVISION_REQUIRED:"warning", COMPLETED:"success"};
+const REQUIRED = ["Intern_ID","Intern_Name","Email","Department","Task_ID","Task_Title","Task_Description","Task_Deadline"];
+const ALLOWED = ["pdf","docx","xlsx","pptx","zip","py","js","ipynb","html","css","md"];
+
+const DEPTS = {
+  "Software Development": [["Build a CLI Inventory Tool","Develop a command-line inventory manager in Python with add, update, delete and search features, plus a README."],["Design a REST Service","Build a small REST API for a library catalogue with CRUD endpoints and tests."]],
+  "Web Development": [["Responsive Landing Page","Create a responsive landing page using HTML, CSS and JavaScript with a working contact form."],["Portfolio Site with Routing","Build a multi-page portfolio with navigation and a projects section."]],
+  "Data Analysis": [["Sales Dashboard Report","Analyse the provided sales dataset and produce charts plus a summary report."],["Customer Segmentation","Cluster customers by purchase behaviour and document the findings in an Excel workbook."]],
+  "AI/ML": [["Sentiment Classifier","Train a text sentiment classifier and report accuracy and a confusion matrix."],["Image Classifier Demo","Train a small CNN on a public image dataset and present the metrics."]],
+  "IoT": [["Temperature Monitor","Build a sensor data logger that publishes readings and shows a live chart."],["Smart Irrigation Prototype","Design a moisture-based irrigation control prototype with documentation."]],
+  "Testing": [["Test Plan for Login Module","Write a test plan with at least 15 test cases and expected results."],["Automated UI Test Suite","Automate 10 end-to-end UI test scenarios using Selenium or Playwright."]],
+  "UI/UX": [["Mobile App Wireframes","Create wireframes and a clickable prototype for a fitness tracker app."],["Usability Study Report","Run a five-person usability test and document findings and recommendations."]],
+  "Automation": [["Invoice Processing Script","Automate invoice extraction from PDFs into a structured CSV file."],["Scheduled Report Bot","Build a bot that generates and emails a daily report at a set time."]]
+};
+const FIRST = ["Aarav","Diya","Rohan","Meera","Kabir","Ananya","Vihaan","Isha","Arjun","Sara","Dev","Priya","Aditya","Kavya","Rahul","Neha","Sanjay","Tara","Yash","Riya"];
+const LAST = ["Sharma","Patel","Iyer","Reddy","Nair","Gupta","Khan","Singh","Menon","Das","Rao","Verma","Kumar","Joshi","Bose"];
+
+/* ============ DATA HELPERS ============ */
+let linkCount = 0;
+const makeLink = () => `https://meet.google.com/review-${Math.random().toString(36).slice(2,7)}-${++linkCount}`;
+
+function makeFeedback(pct) {
+  const done = pct >= 100;
+  return {
+    status: done ? "COMPLETED" : pct >= 60 ? "PARTIALLY_COMPLETED" : "NOT_COMPLETED",
+    completion: pct,
+    completed: ["Core structure delivered", "Primary deliverable submitted"],
+    missing: done ? [] : ["Testing evidence", "Documentation of results"],
+    mistakes: done ? [] : ["Some requirements are only partially addressed"],
+    improvements: done ? [] : ["Expand the output to cover every requirement"],
+    overall: done ? "All requirements are satisfied. Well done." : "Good progress. Address the missing items and resubmit before the next review."
+  };
+}
+
+function generateInterns() {
+  const keys = Object.keys(DEPTS);
+  return Array.from({length: 100}, (_, i) => {
+    const dept = keys[i % 8], k = (i >> 3) % 2, task = DEPTS[dept][k];
+    const name = FIRST[i % 20] + " " + LAST[(i * 7) % 15];
+    const assigned = addDays(TODAY, -(i % 5));
+    const status = i < 60 ? "ALLOCATED" : i < 80 ? "REVISION_REQUIRED" : i < 90 ? "COMPLETED" : "PENDING_REVIEW";
+    const n = {
+      id: "INT-" + (1001 + i), name,
+      email: name.toLowerCase().replace(" ", ".") + "@company.com",
+      dept,
+      task: {id: "T-" + String(keys.indexOf(dept) * 2 + k + 1).padStart(3, "0"), title: task[0], desc: task[1]},
+      start: fmt(addDays(assigned, -30)), end: fmt(addDays(assigned, 60)), deadline: fmt(addDays(assigned, 21)),
+      status, reviewNo: 1, reviewDate: fmt(addDays(assigned, 2)), reviewTime: "10:30",
+      link: makeLink(), submissions: [], feedback: null, chat: [], overrides: []
+    };
+    if (status === "PENDING_REVIEW") n.reviewDate = fmt(TODAY);
+    if (status === "REVISION_REQUIRED") {
+      n.reviewNo = 2; n.reviewDate = fmt(addDays(TODAY, 2));
+      n.submissions = [{v: 1, file: "submission_v1.zip", at: "Earlier"}];
+      n.feedback = makeFeedback(50 + (i % 3) * 10);
+    }
+    if (status === "COMPLETED") {
+      n.reviewNo = 3; n.reviewDate = "-"; n.reviewTime = "-"; n.link = null;
+      n.submissions = [{v: 1, file: "submission_v1.zip", at: "Earlier"}, {v: 2, file: "submission_v2.zip", at: "Earlier"}];
+      n.feedback = makeFeedback(100);
+    }
+    return n;
+  });
+}
+
+function toIntern(r) {
+  return {
+    id: String(r.Intern_ID).trim(), name: String(r.Intern_Name), email: String(r.Email).trim(),
+    dept: String(r.Department),
+    task: {id: String(r.Task_ID), title: String(r.Task_Title), desc: String(r.Task_Description)},
+    start: String(r.Internship_Start_Date || ""), end: String(r.Internship_End_Date || ""),
+    deadline: String(r.Task_Deadline), status: "ALLOCATED", reviewNo: 1,
+    reviewDate: fmt(addDays(TODAY, 2)), reviewTime: String(r.Review_Time || "10:30"), link: makeLink(),
+    submissions: [], feedback: null, chat: [], overrides: []
+  };
+}
+
+/* ============ STATE ============ */
+let interns = generateInterns();
+let session = null;
+let pendingImport = [];
+
+const cur = () => session && session.role === "intern" ? interns.find(x => x.id === session.id) : null;
+
+function render() {
+  const app = document.getElementById("app");
+  document.getElementById("logoutBtn").style.display = session ? "inline-block" : "none";
+  if (!session) { app.innerHTML = loginView(); return; }
+  if (session.role === "admin") { app.innerHTML = adminView(); return; }
+  const n = cur();
+  if (!n) { logout(); return; }
+  app.innerHTML = internView(n);
+  const cb = document.getElementById("chatBox");
+  if (cb) cb.scrollTop = cb.scrollHeight;
+}
+
+function login(role) {
+  if (role === "admin") {
+    session = {role: "admin", tab: "dash", f: {dept: "", status: "", q: ""}, selected: null};
+  } else {
+    const id = document.getElementById("internPick").value;
+    const n = interns.find(x => x.id === id);
+    if (!n) return;
+    if (!n.chat.length) n.chat.push({me: false, text: `Hi ${n.name.split(" ")[0]}! I'm your AI mentor for "${n.task.title}". Ask me about deliverables, requirements, deadlines, the review or common mistakes.`});
+    session = {role: "intern", id};
+  }
+  render();
+}
+
+function logout() { session = null; render(); }
+
+/* ============ LOGIN ============ */
+function loginView() {
+  return `<div class="row g-4 justify-content-center mt-2">
+    <div class="col-md-5"><div class="card border-0 shadow-sm p-4 h-100">
+      <h5>Admin / HR</h5>
+      <p class="text-muted small">Import intern data, monitor the review pipeline and override AI decisions.</p>
+      <button class="btn btn-primary" onclick="login('admin')">Continue as Admin</button>
+    </div></div>
+    <div class="col-md-5"><div class="card border-0 shadow-sm p-4 h-100">
+      <h5>Intern</h5>
+      <p class="text-muted small">View your task, review schedule, mentor chat and feedback.</p>
+      <select id="internPick" class="form-select mb-3">${interns.map(n => `<option value="${n.id}">${esc(n.id)} – ${esc(n.name)}</option>`).join("")}</select>
+      <button class="btn btn-dark" onclick="login('intern')">Continue as Intern</button>
+    </div></div>
+  </div>`;
+}
+
+/* ============ ADMIN ============ */
+function adminView() {
+  const s = session;
+  s.tab = s.tab || "dash";
+  const tabs = `<ul class="nav nav-pills mb-4">
+    <li class="nav-item"><button class="nav-link ${s.tab === "dash" ? "active" : ""}" onclick="setTab('dash')">Dashboard</button></li>
+    <li class="nav-item"><button class="nav-link ${s.tab === "import" ? "active" : ""}" onclick="setTab('import')">Excel Import</button></li>
+  </ul>`;
+  return tabs + (s.tab === "dash" ? dashView() : importView());
+}
+
+function setTab(t) { session.tab = t; render(); }
+
+function dashView() {
+  const f = session.f;
+  const today = fmt(TODAY);
+  const c = s => interns.filter(n => n.status === s).length;
+  const stats = [
+    ["Total Interns", interns.length],
+    ["Allocated", c("ALLOCATED")],
+    ["Pending Reviews", c("PENDING_REVIEW")],
+    ["Today's Reviews", interns.filter(n => n.reviewDate === today).length],
+    ["Submitted", interns.filter(n => n.submissions.length).length],
+    ["Revision Required", c("REVISION_REQUIRED")],
+    ["Completed", c("COMPLETED")],
+    ["Ended, Pending", interns.filter(n => n.end < today && n.status !== "COMPLETED").length]
+  ];
+  return `<div class="row g-3 mb-4">${stats.map(([l, v]) => `
+    <div class="col-6 col-md-3"><div class="card stat shadow-sm p-3"><div class="text-muted small">${l}</div><div class="num">${v}</div></div></div>`).join("")}
+  </div>
+  <div class="row g-2 mb-3">
+    <div class="col-md-3"><select class="form-select" onchange="setF('dept',this.value)"><option value="">All departments</option>${Object.keys(DEPTS).map(d => `<option ${f.dept === d ? "selected" : ""}>${d}</option>`).join("")}</select></div>
+    <div class="col-md-3"><select class="form-select" onchange="setF('status',this.value)"><option value="">All statuses</option>${Object.keys(LABEL).map(s => `<option value="${s}" ${f.status === s ? "selected" : ""}>${LABEL[s]}</option>`).join("")}</select></div>
+    <div class="col-md-6"><input class="form-control" placeholder="Search by intern name or ID" value="${esc(f.q)}" oninput="setF('q',this.value,true)"></div>
+  </div>
+  <div id="tbl">${tableHTML(filtered())}</div>
+  <div id="detail" class="mt-4">${session.selected ? detailView(session.selected) : ""}</div>`;
+}
+
+function filtered() {
+  const f = session.f;
+  return interns.filter(n =>
+    (!f.dept || n.dept === f.dept) &&
+    (!f.status || n.status === f.status) &&
+    (!f.q || (n.name + " " + n.id).toLowerCase().includes(f.q.toLowerCase())));
+}
+
+function setF(k, v, soft) {
+  session.f[k] = v;
+  if (soft) document.getElementById("tbl").innerHTML = tableHTML(filtered());
+  else render();
+}
+
+function tableHTML(list) {
+  if (!list.length) return `<p class="text-muted">No interns match the current filters.</p>`;
+  return `<div class="scroll bg-white rounded shadow-sm"><table class="table table-hover align-middle mb-0">
+    <thead class="table-light sticky-top"><tr><th>ID</th><th>Name</th><th>Department</th><th>Task</th><th>Next review</th><th>Status</th><th>Reviews</th><th></th></tr></thead>
+    <tbody>${list.map(n => `<tr>
+      <td>${n.id}</td><td>${esc(n.name)}</td><td>${esc(n.dept)}</td><td>${esc(n.task.title)}</td>
+      <td>${n.reviewDate} ${n.reviewTime}</td>
+      <td><span class="badge bg-${COLOR[n.status]}">${LABEL[n.status]}</span></td>
+      <td>${n.reviewNo}</td>
+      <td><button class="btn btn-sm btn-outline-primary" onclick="openIntern('${n.id}')">View</button></td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+
+function openIntern(id) {
+  session.selected = id;
+  render();
+  const d = document.getElementById("detail");
+  if (d) d.scrollIntoView({behavior: "smooth"});
+}
+
+function timeline(n) {
+  const d = PROGRESS[n.status];
+  return `<ol class="list-unstyled mb-0">${STEPS.map((s, i) => `
+    <li class="d-flex align-items-center mb-2">
+      <span class="dot ${i < d ? "done" : i === d ? "now" : ""}"></span>
+      <span class="${i < d ? "" : "text-muted"}">${i + 1}. ${s}</span>
+    </li>`).join("")}</ol>`;
+}
+
+function listHTML(title, arr) {
+  return arr && arr.length ? `<div class="small mt-2"><strong>${title}</strong><ul class="mb-1">${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
+}
+
+function feedbackHTML(n) {
+  const f = n.feedback;
+  if (!f) return "";
+  const color = f.status === "COMPLETED" ? "success" : f.status === "PARTIALLY_COMPLETED" ? "warning" : "danger";
+  const next = n.status !== "COMPLETED" && n.link
+    ? `<div class="alert alert-info small mt-3 mb-0">Next review: <strong>${n.reviewDate} ${n.reviewTime}</strong><br><a href="${n.link}" target="_blank">Join next review</a></div>`
+    : "";
+  return `<div class="d-flex justify-content-between small mb-1"><span>${f.status.replaceAll("_", " ")}</span><strong>${f.completion}%</strong></div>
+    <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-${color}" style="width:${f.completion}%"></div></div>
+    <p class="small mb-1">${esc(f.overall)}</p>
+    ${listHTML("Completed successfully", f.completed)}${listHTML("Missing", f.missing)}${listHTML("Mistakes", f.mistakes)}${listHTML("Improvements", f.improvements)}${next}`;
+}
+
+function detailView(id) {
+  const n = interns.find(x => x.id === id);
+  if (!n) return "";
+  return `<div class="card border-0 shadow-sm p-4">
+    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+      <div><h5 class="mb-0">${esc(n.name)} <small class="text-muted">${n.id}</small></h5>
+      <div class="small text-muted">${esc(n.email)} · ${esc(n.dept)} · ${esc(n.task.title)}</div></div>
+      <span class="badge align-self-start bg-${COLOR[n.status]}">${LABEL[n.status]}</span>
+    </div><hr>
+    <div class="row g-4">
+      <div class="col-md-5"><h6>Workflow</h6>${timeline(n)}</div>
+      <div class="col-md-7">
+        <h6>Review #${n.reviewNo}</h6>
+        <p class="small mb-1">${n.reviewDate} at ${n.reviewTime}</p>
+        ${n.link ? `<a class="small" href="${n.link}" target="_blank">${n.link}</a>` : `<p class="small text-muted">No active review</p>`}
+        <h6 class="mt-3">Submissions</h6>
+        ${n.submissions.length ? `<ul class="small">${n.submissions.map(s => `<li>v${s.v} · ${esc(s.file)} · ${esc(s.at)}</li>`).join("")}</ul>` : `<p class="small text-muted">None yet</p>`}
+        <h6 class="mt-3">AI feedback</h6>
+        ${feedbackHTML(n) || `<p class="small text-muted">No analysis yet.</p>`}
+        ${n.overrides.length ? `<h6 class="mt-3">Admin overrides</h6><ul class="small">${n.overrides.map(o => `<li>${o.from} → ${o.to}: ${esc(o.reason)} (${esc(o.at)})</li>`).join("")}</ul>` : ""}
+        <div class="border-top pt-3 mt-3">
+          <button class="btn btn-sm btn-outline-primary mb-3" onclick="triggerReview('${n.id}')">Trigger review now</button>
+          <div class="input-group input-group-sm">
+            <select id="ovSt" class="form-select"><option value="COMPLETED">Mark COMPLETED</option><option value="REVISION_REQUIRED">Mark REVISION_REQUIRED</option></select>
+            <input id="ovReason" class="form-control" placeholder="Reason for override">
+            <button class="btn btn-dark" onclick="override('${n.id}')">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div></div>`;
+}
+
+function triggerReview(id) {
+  const n = interns.find(x => x.id === id);
+  n.reviewDate = fmt(TODAY);
+  if (n.status === "ALLOCATED") n.status = "PENDING_REVIEW";
+  render();
+}
+
+function override(id) {
+  const n = interns.find(x => x.id === id);
+  const st = document.getElementById("ovSt").value;
+  const reason = document.getElementById("ovReason").value.trim();
+  if (!reason) return alert("Please enter a reason for the override.");
+  n.overrides.push({from: n.status, to: st, reason, at: new Date().toLocaleString()});
+  n.status = st;
+  render();
+}
+
+/* ============ EXCEL IMPORT ============ */
+function importView() {
+  return `<div class="card border-0 shadow-sm p-4">
+    <h5>Excel Import</h5>
+    <p class="text-muted small">Required columns: ${REQUIRED.join(", ")}.</p>
+    <div class="row g-2 align-items-center">
+      <div class="col-md-6"><input type="file" class="form-control" id="xf" accept=".xlsx,.xls,.csv"></div>
+      <div class="col-md-6 d-flex gap-2">
+        <button class="btn btn-primary" onclick="parseFile()">Validate file</button>
+        <button class="btn btn-outline-secondary" onclick="loadSample()">Reset to 100-intern sample</button>
+      </div>
+    </div>
+    <div id="impOut" class="mt-4"></div>
+  </div>`;
+}
+
+function parseFile() {
+  const f = document.getElementById("xf").files[0];
+  if (!f) return alert("Choose a file first.");
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type: "array"});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ""});
+      validateRows(rows);
+    } catch (err) {
+      document.getElementById("impOut").innerHTML = `<div class="alert alert-danger">Could not read file: ${esc(err.message)}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function validateRows(rows) {
+  const out = document.getElementById("impOut");
+  const headers = rows.length ? Object.keys(rows[0]) : [];
+  const missing = REQUIRED.filter(h => !headers.includes(h));
+  if (missing.length) { out.innerHTML = `<div class="alert alert-danger">Missing columns: ${missing.join(", ")}</div>`; return; }
+
+  const seen = new Set(), valid = [], errors = [];
+  rows.forEach((r, i) => {
+    const id = String(r.Intern_ID).trim(), p = [];
+    if (!id) p.push("missing Intern_ID");
+    else if (seen.has(id)) p.push("duplicate Intern_ID");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(r.Email).trim())) p.push("invalid email");
+    if (!String(r.Task_ID).trim()) p.push("missing Task_ID");
+    if (!String(r.Task_Description).trim()) p.push("missing task description");
+    if (p.length) errors.push(`Row ${i + 2} (${esc(id || "-")}): ${p.join(", ")}`);
+    else { seen.add(id); valid.push(r); }
+  });
+  pendingImport = valid;
+
+  const cards = [["Total records", rows.length, "dark"], ["Valid", valid.length, "success"], ["Failed", errors.length, "danger"]];
+  out.innerHTML = `<div class="row g-2 mb-3">${cards.map(([l, v, c]) => `
+      <div class="col-4"><div class="alert alert-${c} mb-0 py-2"><small>${l}</small><br><strong>${v}</strong></div></div>`).join("")}
+    </div>
+    ${errors.length ? `<div class="alert alert-warning small"><strong>Validation errors</strong><ul class="mb-0">${errors.map(e => `<li>${e}</li>`).join("")}</ul></div>` : ""}
+    <button class="btn btn-success" ${valid.length ? "" : "disabled"} onclick="importValid()">Import ${valid.length} valid intern(s)</button>`;
+}
+
+function importValid() {
+  interns = pendingImport.map(toIntern);
+  session.selected = null;
+  session.f = {dept: "", status: "", q: ""};
+  session.tab = "dash";
+  render();
+}
+
+function loadSample() {
+  interns = generateInterns();
+  if (session && session.role === "admin") { session.selected = null; session.tab = "dash"; }
+  render();
+}
+
+/* ============ INTERN PORTAL ============ */
+function internView(n) {
+  const reviewBtn = n.link ? `<button class="btn btn-primary btn-sm" onclick="window.open('${n.link}','_blank')">Join Review</button>` : "";
+  return `<div class="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
+    <div><h4 class="mb-0">Hi, ${esc(n.name)}</h4><small class="text-muted">${n.id} · ${esc(n.dept)}</small></div>
+    <span class="badge fs-6 bg-${COLOR[n.status]}">${LABEL[n.status]}</span>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm p-4 mb-4">
+        <h6 class="text-uppercase text-muted">My Task</h6>
+        <h5>${esc(n.task.title)}</h5>
+        <p>${esc(n.task.desc)}</p>
+        <ul class="small mb-2"><li>Core functionality works as described</li><li>All required deliverables are submitted</li><li>Documentation explains setup and results</li></ul>
+        <div class="small text-muted">Deadline: ${esc(n.deadline)}</div>
+      </div>
+      <div class="card border-0 shadow-sm p-4 mb-4">
+        <h6 class="text-uppercase text-muted">My Review</h6>
+        ${n.link
+          ? `<p class="mb-2">Date: <strong>${n.reviewDate}</strong> · Time: <strong>${n.reviewTime}</strong></p>${reviewBtn}
+             <p class="small text-muted mt-2 mb-0">Explain your completed work during the review, then submit your output.</p>`
+          : `<p class="text-muted mb-0">No review is scheduled. Your task is complete.</p>`}
+      </div>
+      <div class="card border-0 shadow-sm p-4">
+        <h6 class="text-uppercase text-muted">Submission</h6>
+        <div class="input-group mb-2"><input type="file" class="form-control" id="subFile"><button class="btn btn-dark" onclick="submitWork()">Submit</button></div>
+        <div class="small text-muted mb-2">Allowed: ${ALLOWED.join(", ")}. Previous versions are kept. Analysis is simulated in this demo.</div>
+        ${n.submissions.length
+          ? `<ul class="list-group list-group-flush small">${n.submissions.map(s => `<li class="list-group-item px-0">v${s.v} · ${esc(s.file)} · ${esc(s.at)}</li>`).join("")}</ul>`
+          : `<p class="text-muted small mb-0">No submissions yet.</p>`}
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm p-4 mb-4">
+        <h6 class="text-uppercase text-muted">AI Feedback</h6>
+        ${n.feedback ? feedbackHTML(n) : `<p class="text-muted small mb-0">Feedback appears here after your submission is analysed.</p>`}
+      </div>
+      <div class="card border-0 shadow-sm p-3">
+        <h6 class="text-uppercase text-muted px-2">AI Task Mentor</h6>
+        <div class="chat" id="chatBox">${n.chat.map(m => `<div class="bub ${m.me ? "me" : "bot"}">${esc(m.text)}</div>`).join("")}</div>
+        <div class="input-group mt-2">
+          <input id="chatIn" class="form-control" placeholder="Ask about your task..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-primary" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function mentorReply(n, q) {
+  const t = q.toLowerCase(), T = n.task;
+  if (/submit|deliver|output|file/.test(t)) return `For "${T.title}", submit the finished work, source or documents, and a README explaining how to run or review it.`;
+  if (/deadline|due/.test(t)) return `The deadline is ${n.deadline}. Your next review is on ${n.reviewDate} at ${n.reviewTime}.`;
+  if (/review|meeting|join|when|time/.test(t)) return `Your review is on ${n.reviewDate} at ${n.reviewTime}. Join with the review link, explain your completed work, then submit your output.`;
+  if (/requirement|criteria|evaluat|grade|marks|assess/.test(t)) return `You will be evaluated on: ${T.desc} All deliverables must be present and clearly documented.`;
+  if (/tool|tech|framework|library|flask|python|language|use/.test(t)) return "You may use any tools that satisfy the task requirements. Choose technologies you can explain clearly during your review.";
+  if (/mistake|avoid|common|error/.test(t)) return "Common mistakes: hard-coding values, skipping documentation, and submitting without testing. Check every requirement before you submit.";
+  if (/step|start|begin|how|objective|explain|about/.test(t)) return `Objective: ${T.desc} Build the core first, test it, then add documentation and polish.`;
+  return `I can only help with your assigned task, "${T.title}". Try asking about deliverables, requirements, deadlines, the review, or common mistakes.`;
+}
+
+function sendChat() {
+  const n = cur(), el = document.getElementById("chatIn"), q = el.value.trim();
+  if (!q) return;
+  n.chat.push({me: true, text: q}, {me: false, text: mentorReply(n, q)});
+  render();
+  document.getElementById("chatIn").focus();
+}
+
+function submitWork() {
+  const n = cur();
+  const f = document.getElementById("subFile").files[0];
+  if (!f) return alert("Choose a file to submit.");
+  const ext = f.name.split(".").pop().toLowerCase();
+  if (!ALLOWED.includes(ext)) return alert("File type not allowed: ." + ext);
+
+  const v = n.submissions.length + 1;
+  n.submissions.push({v, file: f.name, at: new Date().toLocaleString()});
+  // Demo analysis: replace with a call to the backend AI evaluator.
+  const pct = Math.min(100, 40 + 30 * v);
+  n.feedback = makeFeedback(pct);
+  if (pct >= 100) {
+    n.status = "COMPLETED"; n.reviewDate = "-"; n.reviewTime = "-"; n.link = null;
+  } else {
+    n.status = "REVISION_REQUIRED"; n.reviewNo++;
+    n.reviewDate = fmt(addDays(TODAY, 2)); n.link = makeLink();
+  }
+  render();
+}
+
+/* ============ BOOT ============ */
+try {
+  render();
+} catch (err) {
+  document.getElementById("app").innerHTML = `<div class="alert alert-danger m-4"><strong>The page could not start.</strong><br>${esc(err.message)}</div>`;
+  console.error(err);
+}
+</script>
+</body>
+</html>
